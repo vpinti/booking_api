@@ -20,15 +20,20 @@ class Property extends Model
         'long',
     ];
 
-    public function city()
-    {
-        return $this->belongsTo(City::class);
-    }
-
     public static function booted()
     {
         parent::booted();
 
         self::observe(PropertyObserver::class);
+    }
+
+    public function city()
+    {
+        return $this->belongsTo(City::class);
+    }
+
+    public function apartments()
+    {
+        return $this->hasMany(Apartment::class);
     }
 }

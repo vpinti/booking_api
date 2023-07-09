@@ -18,5 +18,7 @@ class DatabaseSeeder extends Seeder
         $this->call(CountrySeeder::class);
         $this->call(CitySeeder::class);
         $this->call(GeoobjectSeeder::class);
+        $this->call(FacilityCategorySeeder::class);
+        $this->call(FacilitySeeder::class);
     }
 }

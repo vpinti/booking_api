@@ -7,9 +7,12 @@ use Illuminate\Database\Eloquent\Model;
 
 use Illuminate\Database\Eloquent\Casts\Attribute;
 
+use Staudenmeir\EloquentEagerLimit\HasEagerLimit;
+
 class Apartment extends Model
 {
     use HasFactory;
+    use HasEagerLimit;
 
     protected $fillable = [
         'property_id',

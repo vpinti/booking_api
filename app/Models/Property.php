@@ -8,9 +8,12 @@ use Illuminate\Database\Eloquent\Model;
 
 use Illuminate\Database\Eloquent\Casts\Attribute;
 
+use Staudenmeir\EloquentEagerLimit\HasEagerLimit;
+
 class Property extends Model
 {
     use HasFactory;
+    use HasEagerLimit;
 
     protected $fillable = [
         'owner_id',

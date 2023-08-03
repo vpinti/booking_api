@@ -16,10 +16,6 @@ use App\Http\Controllers\Public;
 |
 */
 
-// Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-//     return $request->user();
-// });
-
 Route::post('auth/register', App\Http\Controllers\Auth\RegisterController::class);
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -32,12 +28,10 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::prefix('user')->group(function () {
-        Route::get('bookings', [\App\Http\Controllers\User\BookingController::class, 'index']);
-        Route::get('/bookings/{booking}', [\App\Http\Controllers\User\BookingController::class, 'show'])->withTrashed();
-        Route::delete('/bookings/{booking}', [\App\Http\Controllers\User\BookingController::class, 'destroy']);
+        Route::resource('bookings', \App\Http\Controllers\User\BookingController::class)->withTrashed();
     });
 });
 
 Route::get('search', Public\PropertySearchController::class);
 Route::get('properties/{property}', Public\PropertyController::class);
-Route::get('apartments/{apartment}',Public\ApartmentController::class);
+Route::get('apartments/{apartment}', Public\ApartmentController::class);

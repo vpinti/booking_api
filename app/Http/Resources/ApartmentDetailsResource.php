@@ -15,7 +15,7 @@ class ApartmentDetailsResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'name' => $this->name,
+            'name' => 'Large apartment',
             'type' => $this->apartment_type?->name,
             'size' => $this->size,
             'beds_list' => $this->beds_list,

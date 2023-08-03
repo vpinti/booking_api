@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Public;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\PropertySearchResource;
+use App\Models\Facility;
 use App\Models\Geoobject;
 use App\Models\Property;
 use Illuminate\Http\Request;
@@ -12,7 +13,7 @@ class PropertySearchController extends Controller
 {
     public function __invoke(Request $request)
     {
-        $properties = Property::query()
+        $propertiesQuery = Property::query()
             ->with([
                 'city',
                 'apartments.apartment_type',
@@ -71,13 +72,26 @@ class PropertySearchController extends Controller
                     $query->where('price', '<=', $request->price_to);
                 });
             })
-            ->orderBy('bookings_avg_rating', 'desc')
-            ->get();
+            ->orderBy('bookings_avg_rating', 'desc');
 
-            $facilities = [];
+            $facilities = Facility::query()
+                ->withCount(['properties' => function ($property) use ($propertiesQuery) {
+                    // THIS ->pluck() NOW GETS IDs DIRECTLY FROM DB
+                    $property->whereIn('id', $propertiesQuery->pluck('id'));
+                }])
+                ->get()
+                ->where('properties_count', '>', 0)
+                ->sortByDesc('properties_count')
+                ->pluck('properties_count', 'name');
+
+            // WE ADD ->paginate(10) HERE INSTEAD
+            $properties = $propertiesQuery->paginate(10)->withQueryString();
 
             return [
-                'properties' => PropertySearchResource::collection($properties),
+                // https://laracasts.com/discuss/channels/laravel/paginate-while-returning-array-of-api-resource-objects-to-the-resource-collection?page=1&replyId=575401
+                'properties' => PropertySearchResource::collection($properties)
+                    ->response()
+                    ->getData(true),
                 'facilities' => $facilities,
             ];
     }

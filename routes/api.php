@@ -33,6 +33,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::prefix('user')->group(function () {
         Route::get('bookings', [\App\Http\Controllers\User\BookingController::class, 'index']);
+        Route::get('/bookings/{booking}', [\App\Http\Controllers\User\BookingController::class, 'show'])->withTrashed();
+        Route::delete('/bookings/{booking}', [\App\Http\Controllers\User\BookingController::class, 'destroy']);
     });
 });
 

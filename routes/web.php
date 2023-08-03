@@ -13,6 +13,6 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::get('/', function () {
-    return view('welcome');
+Route::prefix('user')->group(function () {
+    Route::resource('bookings', \App\Http\Controllers\User\BookingController::class);
 });

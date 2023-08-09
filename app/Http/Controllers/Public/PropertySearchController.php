@@ -17,7 +17,7 @@ class PropertySearchController extends Controller
             ->with([
                 'city',
                 'apartments.apartment_type',
-                'apartments.rooms.beds.bed_type',
+                'apartments.beds.bed_type',
                 'apartments.prices' => function($query) use ($request) {
                     $query->validForRange([
                         $request->start_date ?? now()->addDay()->toDateString(),
@@ -27,7 +27,6 @@ class PropertySearchController extends Controller
                 'facilities',
                 'media' => fn($query) => $query->orderBy('position'),
             ])
-            ->withAvg('bookings', 'rating')
             ->when($request->city, function($query) use ($request) {
                 $query->where('city_id', $request->city);
             })
@@ -52,6 +51,11 @@ class PropertySearchController extends Controller
                 $query->withWhereHas('apartments', function($query) use ($request) {
                     $query->where('capacity_adults', '>=', $request->adults)
                         ->where('capacity_children', '>=', $request->children)
+                        ->when($request->start_date && $request->end_date, function($query) use ($request) {
+                            $query->whereDoesntHave('bookings', function($q) use ($request) {
+                                $q->validForRange([$request->start_date, $request->end_date]);
+                            });
+                        })
                         ->orderBy('capacity_adults')
                         ->orderBy('capacity_children')
                         ->take(1);
@@ -71,28 +75,27 @@ class PropertySearchController extends Controller
                 $query->whereHas('apartments.prices', function($query) use ($request) {
                     $query->where('price', '<=', $request->price_to);
                 });
-            })
-            ->orderBy('bookings_avg_rating', 'desc');
+            });
 
-            $facilities = Facility::query()
-                ->withCount(['properties' => function ($property) use ($propertiesQuery) {
-                    // THIS ->pluck() NOW GETS IDs DIRECTLY FROM DB
-                    $property->whereIn('id', $propertiesQuery->pluck('id'));
-                }])
-                ->get()
-                ->where('properties_count', '>', 0)
-                ->sortByDesc('properties_count')
-                ->pluck('properties_count', 'name');
+        $facilities = Facility::query()
+            ->withCount(['properties' => function ($property) use ($propertiesQuery) {
+                $property->whereIn('id', $propertiesQuery->pluck('id'));
+            }])
+            ->get()
+            ->where('properties_count', '>', 0)
+            ->sortByDesc('properties_count')
+            ->pluck('properties_count', 'name');
 
-            // WE ADD ->paginate(10) HERE INSTEAD
-            $properties = $propertiesQuery->paginate(10)->withQueryString();
+        $properties = $propertiesQuery
+            ->orderBy('bookings_avg_rating', 'desc')
+            ->paginate(10)
+            ->withQueryString();
 
-            return [
-                // https://laracasts.com/discuss/channels/laravel/paginate-while-returning-array-of-api-resource-objects-to-the-resource-collection?page=1&replyId=575401
-                'properties' => PropertySearchResource::collection($properties)
-                    ->response()
-                    ->getData(true),
-                'facilities' => $facilities,
-            ];
+        return [
+            'properties' => PropertySearchResource::collection($properties)
+                ->response()
+                ->getData(true),
+            'facilities' => $facilities,
+        ];
     }
 }

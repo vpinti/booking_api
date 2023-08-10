@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Services\PricingService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -16,7 +17,7 @@ class ApartmentSearchResource extends JsonResource
             'beds_list' => $this->bedsList,
             'bathrooms' => $this->bathrooms,
             'facilities' => FacilityResource::collection($this->whenLoaded('facilities')),
-            'price' => $this->calculatePriceForDates($request->start_date, $request->end_date),
+            'price' => (new PricingService())->calculateApartmentPriceForDates($this->prices, $request->start_date, $request->end_date),
         ];
     }
 }

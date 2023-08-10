@@ -17,7 +17,7 @@ class PropertiesTest extends TestCase
 
     public function test_property_owner_has_access_to_properties_feature()
     {
-        $owner = User::factory()->create(['role_id' => Role::ROLE_OWNER]);
+        $owner = User::factory()->owner()->create();
         $response = $this->actingAs($owner)->getJson('/api/owner/properties');
 
         $response->assertStatus(200);
@@ -25,7 +25,7 @@ class PropertiesTest extends TestCase
 
     public function test_user_does_not_have_access_to_properties_feature()
     {
-        $owner = User::factory()->create(['role_id' => Role::ROLE_USER]);
+        $owner = User::factory()->user()->create();
         $response = $this->actingAs($owner)->getJson('/api/owner/properties');
 
         $response->assertStatus(403);
@@ -33,7 +33,7 @@ class PropertiesTest extends TestCase
 
     public function test_property_owner_can_add_property()
     {
-        $owner = User::factory()->create(['role_id' => Role::ROLE_OWNER]);
+        $owner = User::factory()->owner()->create();
 
         $response = $this->actingAs($owner)->postJson('/api/owner/properties', [
             'name' => 'My property',
@@ -50,7 +50,7 @@ class PropertiesTest extends TestCase
     {
         Storage::fake();
 
-        $owner = User::factory()->create(['role_id' => Role::ROLE_OWNER]);
+        $owner = User::factory()->owner()->create();
         $cityId = City::value('id');
 
         $property = Property::factory()->create([
@@ -73,28 +73,24 @@ class PropertiesTest extends TestCase
     {
         Storage::fake();
 
-        $owner = User::factory()->create(['role_id' => Role::ROLE_OWNER]);
+        $owner = User::factory()->owner()->create();
         $cityId = City::value('id');
 
-        $property = Property::factory()->create([
+        $property = Property::factory()->withImages()->create([
             'owner_id' => $owner->id,
             'city_id' => $cityId,
         ]);
 
-        // I admit I'm lazy here: 2 API calls to upload files, instead of building a factory
-        $photo1 = $this->actingAs($owner)->postJson('/api/owner/properties/' . $property->id . '/photos', [
-            'photo' => UploadedFile::fake()->image('photo1.png')
-        ]);
-        $photo2 = $this->actingAs($owner)->postJson('/api/owner/properties/' . $property->id . '/photos', [
-            'photo' => UploadedFile::fake()->image('photo2.png')
-        ]);
+        $mediaCollection = $property->getMedia('images');
+        $photo1 = $mediaCollection->first();
+        $photo2 = $mediaCollection->last();
 
-        $newPosition = $photo1->json('position') + 1;
+        $newPosition = $photo1->position + 1;
         $response = $this->actingAs($owner)->postJson('/api/owner/properties/' . $property->id . '/photos/1/reorder/' . $newPosition);
         $response->assertStatus(200);
         $response->assertJsonFragment(['newPosition' => $newPosition]);
 
-        $this->assertDatabaseHas('media', ['file_name' => 'photo1.png', 'position' => $photo2->json('position')]);
-        $this->assertDatabaseHas('media', ['file_name' => 'photo2.png', 'position' => $photo1->json('position')]);
+        $this->assertDatabaseHas('media', ['file_name' => $photo1->file_name, 'position' => $newPosition]);
+        $this->assertDatabaseHas('media', ['file_name' => $photo2->file_name, 'position' => $photo1->position]);
     }
 }

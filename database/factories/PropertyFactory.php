@@ -16,4 +16,13 @@ class PropertyFactory extends Factory
             'long' => fake()->longitude(),
         ];
     }
+
+    public function withImages($count = 2)
+    {
+        return $this->afterCreating(function ($property) use ($count) {
+            for ($i = 0; $i < $count; $i++) {
+                $property->addMedia(fake()->image())->toMediaCollection('images');
+            }
+        });
+    }
 }
